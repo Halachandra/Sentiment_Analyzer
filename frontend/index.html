@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sentiment Analyzer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f4f2fb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 2.5rem;
+      max-width: 540px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(83,74,183,0.10);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 0.5rem;
+    }
+
+    .icon {
+      width: 48px;
+      height: 48px;
+      background: #534AB7;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    h1 { font-size: 22px; font-weight: 700; color: #1a1830; }
+
+    .subtitle { font-size: 14px; color: #7c7a9c; margin-bottom: 1.75rem; margin-left: 62px; }
+
+    label { display: block; font-size: 13px; font-weight: 600; color: #4a4870; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    textarea {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 15px;
+      color: #1a1830;
+      background: #f8f7fd;
+      border: 1.5px solid #e3e0f7;
+      border-radius: 12px;
+      resize: vertical;
+      min-height: 110px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      line-height: 1.6;
+    }
+
+    textarea::placeholder { color: #b0aed0; }
+    textarea:focus { border-color: #534AB7; box-shadow: 0 0 0 4px rgba(83,74,183,0.12); background: #fff; }
+
+    button {
+      margin-top: 14px;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      background: #534AB7;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      letter-spacing: 0.02em;
+    }
+
+    button:hover { background: #3C3489; box-shadow: 0 4px 16px rgba(83,74,183,0.22); }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
+    /* Result box */
+    .result {
+      margin-top: 1.5rem;
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      display: none;
+      border: 1.5px solid;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .result.positive { background: #edf7e3; border-color: #9cd55a; }
+    .result.negative { background: #fdeaea; border-color: #f09595; }
+    .result.neutral  { background: #f4f2eb; border-color: #c4c2b4; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .badge-positive { background: #c5e89a; color: #2e5e0e; }
+    .badge-negative  { background: #f7c1c1; color: #7a1f1f; }
+    .badge-neutral   { background: #d4d2c4; color: #48463e; }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot-pos { background: #5aaa1a; }
+    .dot-neg { background: #e04a4a; }
+    .dot-neu { background: #999; }
+
+    .result-text { font-size: 14px; color: #333; line-height: 1.65; margin-bottom: 14px; }
+
+    .score-row { display: flex; gap: 10px; }
+
+    .score-pill {
+      flex: 1;
+      text-align: center;
+      border-radius: 10px;
+      padding: 10px 6px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.07);
+    }
+
+    .score-num { font-size: 20px; font-weight: 700; }
+    .score-lbl { font-size: 11px; color: #888; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="icon">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    </div>
+    <h1>Sentiment Analyzer</h1>
+  </div>
+  <p class="subtitle">Paste a customer review to analyze its tone</p>
+
+  <label for="review">Review text</label>
+  <textarea id="review" placeholder="e.g. The product was amazing but delivery took forever..."></textarea>
+
+  <button id="analyze-btn" onclick="analyze()">Analyze Sentiment</button>
+
+  <div class="result" id="result">
+    <div id="badge-wrap"></div>
+    <p class="result-text" id="result-text"></p>
+    <div class="score-row" id="score-row"></div>
+  </div>
+</div>
+
+<script>
+  function analyze() {
+    const review = document.getElementById('review').value.trim();
+    if (!review) return;
+
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    btn.textContent = 'Analyzing…';
+
+    setTimeout(() => {
+      const lower = review.toLowerCase();
+      const posWords = ['great','amazing','excellent','love','perfect','fantastic','good','happy','best','wonderful','awesome','superb','satisfied','recommend','delighted','helpful','fast'];
+      const negWords = ['bad','terrible','awful','horrible','poor','worst','hate','disappointed','slow','broken','useless','never','refund','waste','annoying','defective','damaged'];
+
+      let posCount = 0, negCount = 0;
+      posWords.forEach(w => { if (lower.includes(w)) posCount++; });
+      negWords.forEach(w => { if (lower.includes(w)) negCount++; });
+
+      const total = posCount + negCount || 1;
+      const posScore = Math.round((posCount / total) * 100);
+      const negScore = Math.round((negCount / total) * 100);
+      const neuScore = Math.max(0, 100 - posScore - negScore);
+
+      let sentiment, label, badgeClass, dotClass, summary;
+      if (posCount > negCount) {
+        sentiment = 'positive'; label = 'Positive'; badgeClass = 'badge-positive'; dotClass = 'dot-pos';
+        summary = 'This review carries a positive tone. The customer appears satisfied with their experience.';
+      } else if (negCount > posCount) {
+        sentiment = 'negative'; label = 'Negative'; badgeClass = 'badge-negative'; dotClass = 'dot-neg';
+        summary = 'This review carries a negative tone. The customer expressed dissatisfaction or concern.';
+      } else {
+        sentiment = 'neutral'; label = 'Neutral'; badgeClass = 'badge-neutral'; dotClass = 'dot-neu';
+        summary = 'This review has a neutral tone — a mix of positive and negative signals, or neither strongly.';
+      }
+
+      document.getElementById('badge-wrap').innerHTML =
+        `<span class="badge ${badgeClass}"><span class="dot ${dotClass}"></span>${label}</span>`;
+      document.getElementById('result-text').textContent = summary;
+
+      const posColor  = '#4a9a0e';
+      const neuColor  = '#888';
+      const negColor  = '#c93333';
+      document.getElementById('score-row').innerHTML = `
+        <div class="score-pill">
+          <div class="score-num" style="color:${posColor}">${posScore}%</div>
+          <div class="score-lbl">Positive</div>
+        </div>
+        <div class="score-pill">
+          <div class="score-num" style="color:${neuColor}">${neuScore}%</div>
+          <div class="score-lbl">Neutral</div>
+        </div>
+        <div class="score-pill">
+          <div class="score-num" style="color:${negColor}">${negScore}%</div>
+          <div class="score-lbl">Negative</div>
+        </div>`;
+
+      const resultEl = document.getElementById('result');
+      resultEl.className = `result ${sentiment}`;
+      resultEl.style.display = 'block';
+
+      btn.disabled = false;
+      btn.textContent = 'Analyze Sentiment';
+    }, 500);
+  }
+</script>
+
+</body>
+</html>
